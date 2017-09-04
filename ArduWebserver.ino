@@ -1,53 +1,51 @@
 /*                                                           ####################################
-                                                             #   ArduServer     Version 3.0.0-0 #
+                                                             #   ArduServer     Version 3.1-en  #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## STATUS:  STABLE ##
   #####################
 
   ___________________________________________________________________________________________________________
-  Man kann eine eigene 404 Meldung auf der SD-Karte speichern (Dateiname "404.htm")
-  --> Fals es keine eigene 404 Meldung gibt wird eine Standart 404 Meldung Angezeigt.
+  It's possible to set a custom 404 message (Save 404 site as "404.htm" and copy it to the rootdir)
+  --> If no custom 404 message is available a standart message will be shown instead.
   ______________________________________________________________________________________________________
-  Dateinamen müssen im 8.3 Format vorliegen (das heißt maximal 8 Buchstaben, dann ein Punkt und dannnach 3 Buchstaben fÃ¼r das Dateiformat) --> z.B: index.htm NICHT index.html !!
-  --> Antstatt .html --> .htm benutzten !!
-  SD-Karte muss in FAT16/Fat32 formatiert sein
-  Eine HTML-Seite/Datei muss "index.htm" genannt werden und im Hauptverzeichnis der SD Karte gespeichert werden.
-  --> Kann hier veraendert werden
+  Filenames have to be in hte 8.3 format  --> e.g: index.htm NOT index.html !!
+  --> Use .htm instead of .html !!
+  SD-card has to be formated in FAT16/FAT32 
 */
 #define indexfile "index.htm"
 /*
   ___________________________________________________________________________________________________________
-  Port kann geaendert werden (Standart ist 80)
+  Port can be changed (standart is 80)
 */
 #define Port 80
 /*
   ___________________________________________________________________________________________________________
-  Mac Adresse kann geaendert werden
+  Mac Adresse can be changed
 */
 #define macAdresse 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
 /*
   ___________________________________________________________________________________________________________
-  OnBoard LED zeigt Status des Servers an
-  --> Led an --> Bootvorgang --> Warte auf SD Karte
-  --> Led blinkt  --> DHCP war nicht erfolgreich
-  --> Led fade --> Server heruntergefahren
-  --> Led aus --> alles OK
+  OnBoard LED shows status of the server
+  --> Led on --> Booting --> Waiting for SD card (or no SD card inserted)
+  --> Led blinking  --> DHCP unsuccessfully
+  --> Led fade --> Server has been shutdown
+  --> Led off --> everthing is ok
   ___________________________________________________________________________________________________________
 
   Root Directory:
 */
-#define websiteordner "/"
+#define rootdir "/"
 /*
                                                                        ############################
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Basic Authentification  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                        ############################
   ___________________________________________________________________________________________________________
 */
- #define geschuetzterOrdner "secure/"    // Directory secured by Basic Authentification
+#define securedir "secure/"    // Directory secured by Basic Authentification
 /*
   ___________________________________________________________________________________________________________
 */
-#define basicPasswort "YWRtaW5pc3RyYXRvcjpwYXNzd29ydA==" // 'administrator' ist der username und 'passwort' ist das password (base64 Verschlüsselt)
+#define basicPasswort "YWRtaW5pc3RyYXRvcjpwYXNzd29ydA==" // 'administrator' is username and 'passwort' is the password (base64 encoded)
 /*
   Zum Ändern des Passwortes muss man zuerst auf diese(oder andere) Website gehen https://www.base64encode.org/ und dort den Nutzername und Passwort folgendermaßen schreiben:
 
@@ -60,112 +58,42 @@
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Server Manager   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                        #####################
   ___________________________________________________________________________________________________________
-  Mit dem URL "/ServerManager/" kommt man in den Manager, von welchem man den Server steuern kann
-  Dafür ist allerdings das Passwort für die Basic Authentification erforderlich, wenn nicht schon früher im Browser eingegeben.
+  With the URL "YOURIP/ServerManager" you are able to access the ServerManager
   ___________________________________________________________________________________________________________
                                                                           ###############
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Changelog  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                           ###############
   ___________________________________________________________________________________________________________
-  ## Version 2.7 ##
-  1. Server Manager hinzugefügt [Herunterfahren/Wartung/Neustarten]
-  2. Bugfixes
-  3. Kleine Geschwindigkeits optimierung durch Verwendung von Register Variablen
-  ___________________________________________________________________________________________________________
-  ## Version 2.8 ##
-  1. Kleine Verbesserungen
-  ___________________________________________________________________________________________________________
-  ## Version 2.9 ##
-  1. EEPROM entfehrnt
-  2. Bugfix (Sende keine 200 Ok mehr, wenn Dateiformat nicht implementiert ist)
-  3. Bugfix wenn index.htm gesendet wird (Es konnte ein Feheler auftreten, dass "200 OK" nicht gesendet wird)
-  4. Wenn DHCP fehlschlägt wird FehlerDHCP() aufgerufen --> Nach 10 durchläufen wird setup() erneut ausgeführt
-  5. Sonstige Verbesserungen
-  6. Sonstige Bugfixes
-  7. Server Wartungsseite wird nun als HTML Datei angezeigt --> Keine komplikationen mit anderen Browsern mehr
-  8. Sonstige Verbesserungen an den Serververwaltungsseiten
-  9. LED 13 zeigt nun den Boot Vorgang an --> An = Booten Aus = Bootvorgang abgeschlossen
-  10. Relative Pfadangaben werden unterstützt
-  11. SD Karte kann nun auch später eingesetzt werden
-  12. Requests werden schneller verarbeitet --> Auf ServerManager Befehele werden nur 1mal überprüft
-  13. Bugfix bei ServerManager Requests behoben
-  14. IP anzeigen zu Diagnose (ServerManager) hinzugefügt
-  15. Ethernet.maintain() zu Neustart hinzugefügt (DHCP)
-  16. Buffer für Requests vergrößert (Auf (effektiv) 500 Chars) --> Bugfix für Basic Authentification
-  17. Verbesserungen in Funktion ServerShutdown()
-  18. Zeigt nun eine Meldung wenn Server Heruntergefahren oder Neugestartet wurde
-  19. No Content Answer wurde entfehrnt --> wird nicht mehr benötigt
-  20. Weitere kleinere Geschwindigkeitsoptimierungen
-  21. ".ico" Dateien werden unterstützt
-  22. Verbesserungen bei diversen Variablen
-  23. Bug behoben, bei dem der Server weiterhin Daten sendet obwohl die Verbindung zu Client unterbrochen wurde
-  24. TimeOut entfehrnt --> Stabiler + schneller
-  25. Fade anstatt Blink wenn Server heruntergefahren wurde
-  26. Fals Request länger als Buffer ist wird das auslesen des Requests abgebrochen --> Ein sehr langer Request wird nun schneller verarbeitet
-  27. Verbesserungen bei ServerManager --> Redirect auf ServerManager fals falsch eingegeben
-  28. Ungenutzte Programmteile entfehrnt
-  ___________________________________________________________________________________________________________
-  ## Version 2.9.1 ##
-  1. Design der Wartungsseite verbessert
-  2. Design der Diagnoseseite verbessert
-  3. Möglichkeit hinzugefügt, um einfacher ServerManager funktionen einzufügen hinzugefügt
-  4. Kleine Verbesserungen bei Fehlercodes
-  5. Verbesserungen in Funktion ServerShutdown() + Bugfix + Geschwindigkeitsoptimierung
-  6. Bugfix in Serverdiagnose --> HTML Code wurde falsch zusammengebaut + Bugfix in printDirectory()
-  7. Weiterer Bugfix in printDirectory()
-  8. printDirectory() --> Dateien werden in einem Dateibaum angezeigt + Ihre Größen in bytes
-  9. Größe der Dateien wird nun in KiB ODER byte angezeigt (Je nach dem wie groß die Datei ist)
-  10. RAM Nutzung etwas verbessert
-  11. Das Herunterfahren des Servers legt die CPU in den "Schlafmodus"
-
-  --> BUG: OUT OF MEMORY in Funktion printDirectory()
-  ___________________________________________________________________________________________________________
-  ## Version 2.9.2 ##
-  1. OUT OF MEMORY BUG behoben.
-  2. Sonstige Verbesserungen
-  ___________________________________________________________________________________________________________
-  ## Version 2.9.3 ##
-  1. HTTP TRACE Funktion hinzugefügt für bessere Debugging Möglichkeiten
-  ___________________________________________________________________________________________________________
-  ## Version 2.9.4 ##
-  1. UPDATE: Benutze neue Ethernet Library
-  2. Überarbeitete GUI
-  3. kleinere Bugfixes
-  4. InternalErrorHandler() hinzugefügt
-  5. Funktionen umbenannt (für bessere Übersicht)
-  6. Setup() Ablauf verbessert
-  ___________________________________________________________________________________________________________
-  ## Version 2.9.4-1 ##
-  1. kleinere Verbesserungen
-  2. kleinere Verbesserungen in HTML Code für GUI
-  ___________________________________________________________________________________________________________
   ## Version 3.0.0-0 ##
   1. Server Manager kann auch ohne SD Karte aufgerufen werden
   2. Bug in printDirectory behoben
-  3. removed Internal Server Error 
+  3. removed Internal Server Error
   4. Mac Adresse wird in Diagnose angezeigt
+  ___________________________________________________________________________________________________________
+  ## Version 3.1-en ##
+  1.Translated most parts to English
   ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
 #include <avr/sleep.h>
 #include <avr/wdt.h>
-#include <SPI.h>           // Wird für die Kommunikation zwischen Shield und Arduino benoetigt
-#include <Ethernet.h>      // Library für Ethernet
-#include <SD.h>            // Library für SD Karte
+#include <SPI.h>           // required for communication between Arduino and Shield
+#include <Ethernet.h>      // Library for Ethernet
+#include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.0.0-0"
+#define ServerVersion "Version 3.1-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 
-uint8_t mac[] = { macAdresse };          // Variable für mac Adresse
+uint8_t mac[] = { macAdresse };
 
 EthernetServer server(Port);
 char *filename;
 File htmlfile;
 
 boolean noSDCard = false;
-unsigned int rebootanzahl = 0;           // speichert die Anzahl der Reboots
+unsigned int rebootanzahl = 0;           // global var for some debugging stuff
 boolean noindex = false;
 
 EthernetClient client;
@@ -174,14 +102,14 @@ void setup() {
   pinMode(errorLed, OUTPUT);
   digitalWrite(errorLed, HIGH);
   byte i = 0;
-  while (Ethernet.begin(mac) <= 0) {     // DHCP wird 5 mal versucht
+  while (Ethernet.begin(mac) <= 0) {     // triying DHCP 5 times
     i++;
-    if (i >= 5) {                        // Fals DHCP 5 mal fehlschlaegt wird aufgehuert
+    if (i >= 5) {                        // If DHCP is not successful
       internalErrorHandler(1);
     }
   }
-  server.begin();                        // Server startet
-  if (SD.begin(chipSelect) == true) {            // SD Karte wird initialisiert
+  server.begin();                        // start server
+  if (SD.begin(chipSelect) == true) {    // try to initialize SD card  
     if (!SD.exists(indexfile)) {
       noindex = true;
     }
@@ -213,7 +141,7 @@ void internalErrorHandler(byte e) {
 
 /////////////////////////////////////////////////////////////
 
-void DHCPErrorHandler() {             // Wird ausgefuehrt, fals DHCP 5 mal fehlschlaegt
+void DHCPErrorHandler() {             // Executed if DHCP is not successfully 
   for (byte x = 0; x < 10; x++) {
     digitalWrite(errorLed, HIGH);
     delay(500);
@@ -233,13 +161,13 @@ void protokollErrorHandler(byte e) {
       Content();
 
       filename = "404.htm";
-      if (SD.exists(filename)) {                      //Fals "404.htm" auf der SD Karte existiert
+      if (SD.exists(filename)) {                      //If no "404.htm" is available on the SD card
         htmlfile = SD.open(filename, FILE_READ);
         while (htmlfile.available())
         {
-          client.write(htmlfile.read());             // Website an Client schicken
+          client.write(htmlfile.read());             // send website to client
         }
-        htmlfile.close();                            // Datei wird geschlossen
+        htmlfile.close();                            // Close file
         break;
       }
       else {
@@ -251,13 +179,13 @@ void protokollErrorHandler(byte e) {
       client.println(F("401 Access Denied"));
       client.println(F("WWW-Authenticate: Basic realm=''"));
       break;
-/*
-    case 3:
-      client.println(F("500 Internal Server Error"));
-      Content();
-      client.println(F("<h1>Internal Server Error</h1>"));
-      break;
-*/
+    /*
+        case 3:
+          client.println(F("500 Internal Server Error"));
+          Content();
+          client.println(F("<h1>Internal Server Error</h1>"));
+          break;
+    */
     case 4:
       client.println(F("501 Not Implemented"));
       Content();
@@ -280,7 +208,7 @@ void protokollErrorHandler(byte e) {
 
 /////////////////////////////////////////////////////////////
 
-void Content() {                                //Sendet den Content-Type html
+void Content() {                                //send Content-Type html
   ContentType(1);
   client.println(F("html"));
   client.println(F("Connection: close"));
@@ -289,7 +217,7 @@ void Content() {                                //Sendet den Content-Type html
 
 /////////////////////////////////////////////////////////////
 
-void HTTP() {                                    //Sendet HTTP/1.1 am Anfang der Antwort
+void HTTP() {                                    //Send "HTTP/1.1" at every begin of the answer to client
   client.print(F("HTTP/1.1 "));
 }
 
@@ -318,16 +246,16 @@ void ContentType(register byte type) {
 
 /////////////////////////////////////////////////////////////
 
-void ConnectionStop() {                    // Beendet die Kommunikation zum Client
+void ConnectionStop() {                    // Closes the connection to client
   client.flush();
-  client.stop();                           // Verbindung trennen
+  client.stop();                           // shutdown connection
   htmlfile.close();
   loop();
 }
 
 /////////////////////////////////////////////////////////////
 
-void ServerShutdown(boolean noreboot) {      // Startet Server neu oder fährt ihn herunter
+void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
   if (noreboot == true) {
     HTTPHeader();
     client.println(F("<h1>Server Neugestartet</h1>"));
@@ -336,13 +264,13 @@ void ServerShutdown(boolean noreboot) {      // Startet Server neu oder fährt i
     HTTPHeader();
     client.println(F("<h1>Server Heruntergefahren</h1>"));
   }
-  client.flush();                          // Alte Daten löschen
-  client.stop();                           // Verbindung trennen
-  htmlfile.close();                        // SD File schließen
+  client.flush();                          // Clean up some stuff
+  client.stop();                           // Close connections
+  htmlfile.close();                        // close files
   if (noreboot == false) {
     CPUsleep();
   }
-  Ethernet.maintain();                     // Erneuert IP per DHCP
+  Ethernet.maintain();                     // Renew DHCP
   rebootanzahl++;
 }
 
@@ -403,13 +331,13 @@ void printDirectory(File dir, int numTabs) {
 void ServerManager() {
   HTTPHeader();
   HTMLHeader(1);
-  client.print(F("<h1>Server Manager</h1><tr><td style='background-color: #FF7F64;text-align: center;width: 120px; height:120px; border-radius:50%;'><a href='./SH'>Herunterfahren</a>"));
+  client.print(F("<h1>Server Manager</h1><tr><td style='background-color: #FF7F64;text-align: center;width: 120px; height:120px; border-radius:50%;'><a href='./SH'>Shutdown</a>"));
   SpZe(1);
-  client.print(F("<a href='./SR'>Neustarten</a>"));
+  client.print(F("<a href='./SR'>Reboot</a>"));
   SpZe(1);
-  client.print(F("<a href='./SD'>Diagnose</a>"));
+  client.print(F("<a href='./SD'>Diagnosis</a>"));
   SpZe(1);
-  client.print(F("<a href='../404.htm'>404 Meldung anzeigen</a>"));
+  client.print(F("<a href='../404.htm'>Show 404 site</a>"));
   client.print(F("</td></tr></table></body></html>"));
   ConnectionStop();
 }
@@ -447,30 +375,30 @@ void ServerDiagnose() {
   unsigned int time = millis() / 60000;
   HTTPHeader();
   HTMLHeader(2);
-  client.print(F("<h1>Wartungsdaten</h1><tr><td>"));
+  client.print(F("<h1>Diagnosis data</h1><tr><td>"));
   client.print(F(ServerVersion));
   SpZe(2);
-  client.print(F("Betriebszeit(Minuten): "));
+  client.print(F("Uptime(minutes): "));
   client.print(time);
   SpZe(2);
   client.print(rebootanzahl);
-  client.print(F(" Neutstart(s)"));
+  client.print(F(" Reboot(s)"));
   SpZe(2);
-  client.print(F("Probleme: "));
+  client.print(F("Problems: "));
   if (noindex == true) {
-    client.print(F("index.htm fehlt"));
+    client.print(F("index.htm missing"));
   }
   else if (time > 1400 && time / 1400 > rebootanzahl) {
-    client.print(F("Reboot noetig"));
+    client.print(F("Reboot necessary"));
   }
   else if (FreeRam() < 1000) {
-    client.print(F("Out of Memory Event"));
+    client.print(F("Out of Memory event"));
   }
-  else if (noSDCard == true){
-    client.print(F("Keine SD Karte erkannt"));
+  else if (noSDCard == true) {
+    client.print(F("SD card not recognized"));
   }
   else {
-    client.print(F("keine"));
+    client.print(F("none"));
   }
   SpZe(2);
   client.print(F("IP:  "));
@@ -481,22 +409,22 @@ void ServerDiagnose() {
     }
   }
   SpZe(2);
-  client.print(F("MAC-Adresse:  "));
-  for (int i=0; i<6; i++){
+  client.print(F("MAC-adress:  "));
+  for (int i = 0; i < 6; i++) {
     client.print(mac[i], HEX);
-    if(i<6){
+    if (i < 6) {
       client.print(F("."));
     }
   }
   SpZe(2);
-  client.print(F("Freier Ram: "));
+  client.print(F("Available RAM: "));
   cli();
   client.print(FreeRam());
   sei();
   client.print(F(" bytes"));
   SpZe(2);
-  client.print(F("Dateien auf SD-Karte</br></br>"));
-  printDirectory(SD.open(websiteordner, FILE_READ), 0);
+  client.print(F("Files on SD-card</br></br>"));
+  printDirectory(SD.open(rootdir, FILE_READ), 0);
   client.print(F("</td></tr></table></body></html>"));
   ConnectionStop();
 }
@@ -518,7 +446,7 @@ void HTTP200OK() {
 /////////////////////////////////////////////////////////////
 
 void SDCheck() {
-  if (SD.begin(chipSelect) == false) {            // SD Karte wird initialisiert
+  if (SD.begin(chipSelect) == false) {            // Initialize SD card
     digitalWrite(errorLed, HIGH);
     //protokollErrorHandler(3);
   }
@@ -539,7 +467,7 @@ void SDCheck() {
 void loop() {
   register int i = 0;
   byte bufoverflow = 0;
-  char clientline[BUFSIZ];                  // Array, in der die Anfrage von Client gespeichert wird
+  char clientline[BUFSIZ];                  // Array, for saving client request temporary
   register char c;
   client = server.available();
 
@@ -559,26 +487,26 @@ void loop() {
       clientline[i] = 0;
       i = 0;
 
-      if (noSDCard == true) {                // Wird nur ausgeführt, wenn keine SD Karte eingelegt ist
+      if (noSDCard == true) {                // Gets executed if no SD card is available
         SDCheck();
       }
 
-      if (strstr(clientline, "GET / ") != 0)     // nichts nach GET / --> index.htm wird angezeigt
+      if (strstr(clientline, "GET / ") != 0)     // nothing after "GET /" --> index.htm 
       {
-        if (noSDCard == true) {                // Wird nur ausgeführt, wenn keine SD Karte eingelegt ist
+        if (noSDCard == true) {                // Gets executed if no SD card is available
           SDCheck();
         }
         filename = indexfile;
-        if (SD.exists(filename)) {               //wenn "index.htm" auf der SD Karte existiert
+        if (SD.exists(filename)) {               //if "index.htm" exists on SD card
           HTTPHeader();
-          htmlfile = SD.open(filename, FILE_READ);     //index.htm Datei wird im NUR LESEN Modus geoeffnet
+          htmlfile = SD.open(filename, FILE_READ);     //open index.htm in READ_ONLY mode
           while (htmlfile.available() && client.connected())
           {
-            client.write(htmlfile.read());             // Website an Client schicken
+            client.write(htmlfile.read());             // send file to client
           }
-          htmlfile.close();                            //schliesst "index.htm"
+          htmlfile.close();                            //close "index.htm"
         }
-        else                                           // Fals "index.htm" Nicht existiert
+        else                                           // if "index.htm" does not exist
         {
           protokollErrorHandler(1);                            // 404
         }
@@ -587,10 +515,10 @@ void loop() {
       else if (strstr(clientline, "GET /") != 0)
       {
         /////////////////////////////////////////////////////////////
-#ifdef geschuetzterOrdner
+#ifdef securedir
 
-        if (strstr(clientline, geschuetzterOrdner ) != 0) {    // Passwort benötigt
-          if (noSDCard == true) {                // Wird nur ausgeführt, wenn keine SD Karte eingelegt ist
+        if (strstr(clientline, securedir ) != 0) {    // Passwort required
+          if (noSDCard == true) {                // Gets executed if no SD card is available
             SDCheck();
           }
           if (strstr(clientline, basicPasswort) != 0) {
@@ -604,15 +532,15 @@ void loop() {
 
         if (strstr(clientline, " /ServerManager/") != 0) {
           if (strstr(clientline, "Manager/ " ) != 0) {      // Server Manager
-            if (strstr(clientline, basicPasswort) != 0) {        //Prüft ob Client Authorisiert ist
+            if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissions
               ServerManager();
             }
             else {
               protokollErrorHandler(2);
             }
           }
-          else if (strstr(clientline, "/SR " ) != 0) {      // Server neustarten
-            if (strstr(clientline, basicPasswort) != 0) {        //Prüft ob Client Authorisiert ist
+          else if (strstr(clientline, "/SR " ) != 0) {      // Server reboot
+            if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissions
               ServerShutdown(true);
               //continue;
             }
@@ -620,16 +548,16 @@ void loop() {
               protokollErrorHandler(2);
             }
           }
-          else if (strstr(clientline, "/SH " ) != 0) {      // Server herunterfahren
-            if (strstr(clientline, basicPasswort) != 0) {        //Prüft ob Client Authorisiert ist
+          else if (strstr(clientline, "/SH " ) != 0) {      // Server shutdown
+            if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissions
               ServerShutdown(false);
             }
             else {
               protokollErrorHandler(2);
             }
           }
-          else if (strstr(clientline, "/SD " ) != 0) {      // Server Wartung
-            if (strstr(clientline, basicPasswort) != 0) {        //Prüft ob Client Authorisiert ist
+          else if (strstr(clientline, "/SD " ) != 0) {      // Server diagnosis
+            if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissionst
               ServerDiagnose();
             }
             else {
@@ -637,7 +565,7 @@ void loop() {
             }
           }
           else {
-            if (strstr(clientline, basicPasswort) != 0) {        //Prüft ob Client Authorisiert ist
+            if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissions
               protokollErrorHandler(7);
             }
             else {
@@ -645,13 +573,13 @@ void loop() {
             }
           }
         }
-        if (noSDCard == true) {                // Wird nur ausgeführt, wenn keine SD Karte eingelegt ist
+        if (noSDCard == true) {                // Gets executed if no SD card is available
           SDCheck();
         }
-        filename = clientline + 5;                     // schaue nach "GET /"
+        filename = clientline + 5;                     // look after "GET /"
         (strstr(clientline, " HTTP"))[0] = 0;
 
-        if (SD.exists(filename)) {                             // Wenn Angefragte Datei vorhanden ist
+        if (SD.exists(filename)) {                             // If requested file is on SD card
 
           if (strstr(clientline, ".htm") != 0) {
             HTTP200OK();
@@ -729,20 +657,20 @@ void loop() {
             client.println(F("xml"));
           }
           else {
-            protokollErrorHandler(4);                   // Angefragte Datei wird nicht unterstuetzt
+            protokollErrorHandler(4);                   // Requested file is not supported
           }
           client.println(F("Connection: close"));
           client.println();
-          htmlfile = SD.open(filename, FILE_READ);    // Angefragte Datei wird im NUR LESEN Modus geoeffnet
+          htmlfile = SD.open(filename, FILE_READ);    //open file in READ_ONLY mode
           while (htmlfile.available() && client.connected())
           {
-            client.write(htmlfile.read());            // Website an Client schicken
+            client.write(htmlfile.read());            // send file to client
           }
-          htmlfile.close();                           // Datei wird geschlossen
+          htmlfile.close();                           // close file
         }
-        else                                          // Fals es die Angefragte Datei nicht gibt
+        else                                          // If requested file is not on SD card
         {
-          if (strstr(clientline, "/ServerManager") != 0) {        //Prüft ob Client Authorisiert ist
+          if (strstr(clientline, "/ServerManager") != 0) {        //Ceck wether client has required permissions
             protokollErrorHandler(7);
           }
           else
@@ -751,21 +679,21 @@ void loop() {
           }
         }
       }
-      
+
       else if (strstr(clientline, "TRACE ") != 0) {
         HTTP200OK();
         ContentType(1);
         client.println(F("plain"));
         client.write(clientline, BUFSIZ);
       }
-      
+
       else
       {
-        protokollErrorHandler(5);                            // Anfrage von Client war Fehlerhaft
+        protokollErrorHandler(5);                            // Request incorrect
       }
-      
-      ConnectionStop();                              // Beendet Kommunikation zu Client
+
+      ConnectionStop();                              // Close communication to client
     }
-    ConnectionStop();                               // Beendet Kommunikation zu Client
+    ConnectionStop();                               // Close communication to client
   }
 }
