@@ -1,5 +1,5 @@
 /*                                                           ####################################
-                                                             #   ArduServer     Version 3.1-en  #
+                                                             #   ArduServer     Version 3.2-en  #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## STATUS:  STABLE ##
   #####################
@@ -73,6 +73,9 @@
   ## Version 3.1-en ##
   1.Translated most parts to English
   ___________________________________________________________________________________________________________
+  ## Version 3.2-en ##
+  1. drastically improved transmission speed
+  ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
@@ -82,7 +85,7 @@
 #include <Ethernet.h>      // Library for Ethernet
 #include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.1-en"
+#define ServerVersion "Version 3.2-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 
@@ -93,7 +96,7 @@ char *filename;
 File htmlfile;
 
 boolean noSDCard = false;
-unsigned int rebootanzahl = 0;           // global var for some debugging stuff
+unsigned int rebootcount = 0;           // global var for counting "reboots"
 boolean noindex = false;
 
 EthernetClient client;
@@ -271,7 +274,7 @@ void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
     CPUsleep();
   }
   Ethernet.maintain();                     // Renew DHCP
-  rebootanzahl++;
+  rebootcount++;
 }
 
 ///////////////////////////////////////////////////////////
@@ -381,18 +384,18 @@ void ServerDiagnose() {
   client.print(F("Uptime(minutes): "));
   client.print(time);
   SpZe(2);
-  client.print(rebootanzahl);
+  client.print(rebootcount);
   client.print(F(" Reboot(s)"));
   SpZe(2);
   client.print(F("Problems: "));
   if (noindex == true) {
     client.print(F("index.htm missing"));
   }
-  else if (time > 1400 && time / 1400 > rebootanzahl) {
+  else if (time > 1400 && time / 1400 > rebootcount) {
     client.print(F("Reboot necessary"));
   }
   else if (FreeRam() < 1000) {
-    client.print(F("Out of Memory event"));
+    client.print(F("Out of Memory"));
   }
   else if (noSDCard == true) {
     client.print(F("SD card not recognized"));
@@ -500,11 +503,24 @@ void loop() {
         if (SD.exists(filename)) {               //if "index.htm" exists on SD card
           HTTPHeader();
           htmlfile = SD.open(filename, FILE_READ);     //open index.htm in READ_ONLY mode
-          while (htmlfile.available() && client.connected())
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          byte fileBuffer[64];
+          int fileCounter = 0;
+          
+          while(htmlfile.available() && client.connected())
           {
-            client.write(htmlfile.read());             // send file to client
+            fileBuffer[fileCounter] = htmlfile.read();
+            fileCounter++;
+            if(fileCounter > 63)
+            {
+              client.write(fileBuffer,64);
+              fileCounter = 0;
+            }
           }
-          htmlfile.close();                            //close "index.htm"
+
+          if(fileCounter > 0) client.write(fileBuffer,fileCounter);       //final <64 byte cleanup packet     
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          htmlfile.close();                           // close file
         }
         else                                           // if "index.htm" does not exist
         {
@@ -662,11 +678,25 @@ void loop() {
           client.println(F("Connection: close"));
           client.println();
           htmlfile = SD.open(filename, FILE_READ);    //open file in READ_ONLY mode
-          while (htmlfile.available() && client.connected())
+
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          byte fileBuffer[64];
+          int fileCounter = 0;
+          
+          while(htmlfile.available() && client.connected())
           {
-            client.write(htmlfile.read());            // send file to client
+            fileBuffer[fileCounter] = htmlfile.read();
+            fileCounter++;
+            if(fileCounter > 63)
+            {
+              client.write(fileBuffer,64);
+              fileCounter = 0;
+            }
           }
-          htmlfile.close();                           // close file
+
+          if(fileCounter > 0) client.write(fileBuffer,fileCounter);       //final <64 byte cleanup packet     
+////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+          //htmlfile.close();                           // close file
         }
         else                                          // If requested file is not on SD card
         {
@@ -678,6 +708,7 @@ void loop() {
             protokollErrorHandler(1);                           // 404
           }
         }
+        htmlfile.close();                           // close file
       }
 
       else if (strstr(clientline, "TRACE ") != 0) {
