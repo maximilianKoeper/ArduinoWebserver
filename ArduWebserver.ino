@@ -4,7 +4,6 @@
   ## STATUS:  STABLE ##
   #####################
 
-  
   ___________________________________________________________________________________________________________
   It's possible to set a custom 404 message (Save 404 site as "404.htm" and copy it to the rootdir)
   --> If no custom 404 message is available a standart message will be shown instead.
@@ -76,6 +75,10 @@
   ___________________________________________________________________________________________________________
   ## Version 3.2-en ##
   1. drastically improved transfer speed (to client)
+  2. removed client.connected() check to speed up the transfer speed
+  3. removed some unnecessary parts
+  4. Some changes
+  5. Bugfix
   ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
@@ -89,12 +92,13 @@
 #define ServerVersion "Version 3.2-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
+#define FILEBUF 64
 
 uint8_t mac[] = { macAdresse };
 
 EthernetServer server(Port);
 char *filename;
-File htmlfile;
+File currentfile;
 
 boolean noSDCard = false;
 unsigned int rebootcount = 0;           // global var for counting "reboots"
@@ -112,7 +116,7 @@ void setup() {
       internalErrorHandler(1);
     }
   }
-  server.begin();                        // start server
+  server.begin();                        // starts server
   if (SD.begin(chipSelect) == true) {    // try to initialize SD card  
     if (!SD.exists(indexfile)) {
       noindex = true;
@@ -166,12 +170,7 @@ void protokollErrorHandler(byte e) {
 
       filename = "404.htm";
       if (SD.exists(filename)) {                      //If no "404.htm" is available on the SD card
-        htmlfile = SD.open(filename, FILE_READ);
-        while (htmlfile.available())
-        {
-          client.write(htmlfile.read());             // send website to client
-        }
-        htmlfile.close();                            // Close file
+        sendfile();                                   // Close file
         break;
       }
       else {
@@ -183,13 +182,13 @@ void protokollErrorHandler(byte e) {
       client.println(F("401 Access Denied"));
       client.println(F("WWW-Authenticate: Basic realm=''"));
       break;
-    /*
-        case 3:
-          client.println(F("500 Internal Server Error"));
-          Content();
-          client.println(F("<h1>Internal Server Error</h1>"));
-          break;
-    */
+  /*
+      case 3:
+        client.println(F("500 Internal Server Error"));
+        Content();
+        client.println(F("<h1>Internal Server Error</h1>"));
+        break;
+  */
     case 4:
       client.println(F("501 Not Implemented"));
       Content();
@@ -253,7 +252,6 @@ void ContentType(register byte type) {
 void ConnectionStop() {                    // Closes the connection to client
   client.flush();
   client.stop();                           // shutdown connection
-  htmlfile.close();
   loop();
 }
 
@@ -270,7 +268,6 @@ void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
   }
   client.flush();                          // Clean up some stuff
   client.stop();                           // Close connections
-  htmlfile.close();                        // close files
   if (noreboot == false) {
     CPUsleep();
   }
@@ -298,34 +295,34 @@ void CPUsleep()
 
 void printDirectory(File dir, int numTabs) {
   while (true) {
-    htmlfile =  dir.openNextFile();
-    if (! htmlfile) {
+    currentfile =  dir.openNextFile();
+    if (! currentfile) {
       break;
     }
     for (unsigned int i = 0; i < numTabs; i++) {
       client.print(F("|-->"));
     }
-    client.print(htmlfile.name());
-    if (htmlfile.isDirectory()) {
+    client.print(currentfile.name());
+    if (currentfile.isDirectory()) {
       client.println(" /");
       client.print(F("</br>"));
-      printDirectory(htmlfile, numTabs + 1);
+      printDirectory(currentfile, numTabs + 1);
     }
     else {
       client.print(F(" | "));
-      if (htmlfile.size() > 1000) {
-        client.print(htmlfile.size() / 1024);
+      if (currentfile.size() > 1000) {
+        client.print(currentfile.size() / 1024);
         client.print(F(" KiB"));
       }
       else {
-        client.print(htmlfile.size());
+        client.print(currentfile.size());
         client.print(F(" byte"));
       }
     }
-    htmlfile.close();
+    currentfile.close();
     client.print(F("</br>"));
   }
-  htmlfile.close();
+  currentfile.close();
   dir.close();
   return;
 }
@@ -392,9 +389,11 @@ void ServerDiagnose() {
   if (noindex == true) {
     client.print(F("index.htm missing"));
   }
+  /*
   else if (time > 1400 && time / 1400 > rebootcount) {
     client.print(F("Reboot necessary"));
   }
+  */
   else if (FreeRam() < 1000) {
     client.print(F("Out of Memory"));
   }
@@ -468,6 +467,27 @@ void SDCheck() {
 
 /////////////////////////////////////////////////////////////
 
+boolean sendfile(){
+  File sendfile = SD.open(filename, FILE_READ);
+  byte fileBuffer[FILEBUF];
+  int fileCounter = 0;
+  while(sendfile.available())
+  {
+    fileBuffer[fileCounter] = sendfile.read();
+    fileCounter++;
+    if(fileCounter > (FILEBUF-1))
+    {
+      client.write(fileBuffer,FILEBUF);
+      fileCounter = 0;
+    }
+  }
+  if(fileCounter > 0){
+    client.write(fileBuffer,fileCounter);       //final <64 byte cleanup packet
+  } 
+  sendfile.close();                           // close file   
+}
+/////////////////////////////////////////////////////////////
+
 void loop() {
   register int i = 0;
   byte bufoverflow = 0;
@@ -503,25 +523,7 @@ void loop() {
         filename = indexfile;
         if (SD.exists(filename)) {               //if "index.htm" exists on SD card
           HTTPHeader();
-          htmlfile = SD.open(filename, FILE_READ);     //open index.htm in READ_ONLY mode
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          byte fileBuffer[64];
-          int fileCounter = 0;
-          
-          while(htmlfile.available() && client.connected())
-          {
-            fileBuffer[fileCounter] = htmlfile.read();
-            fileCounter++;
-            if(fileCounter > 63)
-            {
-              client.write(fileBuffer,64);
-              fileCounter = 0;
-            }
-          }
-
-          if(fileCounter > 0) client.write(fileBuffer,fileCounter);       //final <64 byte cleanup packet     
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          htmlfile.close();                           // close file
+          sendfile();
         }
         else                                           // if "index.htm" does not exist
         {
@@ -678,26 +680,7 @@ void loop() {
           }
           client.println(F("Connection: close"));
           client.println();
-          htmlfile = SD.open(filename, FILE_READ);    //open file in READ_ONLY mode
-
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          byte fileBuffer[64];
-          int fileCounter = 0;
-          
-          while(htmlfile.available() && client.connected())
-          {
-            fileBuffer[fileCounter] = htmlfile.read();
-            fileCounter++;
-            if(fileCounter > 63)
-            {
-              client.write(fileBuffer,64);
-              fileCounter = 0;
-            }
-          }
-
-          if(fileCounter > 0) client.write(fileBuffer,fileCounter);       //final <64 byte cleanup packet     
-////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-          //htmlfile.close();                           // close file
+          sendfile();
         }
         else                                          // If requested file is not on SD card
         {
@@ -709,7 +692,6 @@ void loop() {
             protokollErrorHandler(1);                           // 404
           }
         }
-        htmlfile.close();                           // close file
       }
 
       else if (strstr(clientline, "TRACE ") != 0) {
