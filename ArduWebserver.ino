@@ -1,5 +1,5 @@
 /*                                                           ####################################
-                                                             #   ArduServer     Version 3.2-en  #
+                                                             #   ArduServer     Version 3.3-en  #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## STATUS:  STABLE ##
   #####################
@@ -54,6 +54,9 @@
   dann kodieren und einfügen.
   ___________________________________________________________________________________________________________
 
+*/
+#define EnableTRACE
+/*
                                                                        #####################
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Server Manager   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                        #####################
@@ -63,12 +66,6 @@
                                                                           ###############
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Changelog  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                           ###############
-  ___________________________________________________________________________________________________________
-  ## Version 3.0.0-0 ##
-  1. Server Manager kann auch ohne SD Karte aufgerufen werden
-  2. Bug in printDirectory behoben
-  3. removed Internal Server Error
-  4. Mac Adresse wird in Diagnose angezeigt
   ___________________________________________________________________________________________________________
   ## Version 3.1-en ##
   1.Translated most parts to English
@@ -80,6 +77,10 @@
   4. Some changes
   5. Bugfix
   ___________________________________________________________________________________________________________
+  ## Version 3.3-en ##
+  1. Bugfix --> printDirectory() is now working properly
+  2. Minor improvements
+  ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
@@ -89,7 +90,7 @@
 #include <Ethernet.h>      // Library for Ethernet
 #include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.2-en"
+#define ServerVersion "Version 3.3-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 #define FILEBUF 64
@@ -98,7 +99,6 @@ uint8_t mac[] = { macAdresse };
 
 EthernetServer server(Port);
 char *filename;
-File currentfile;
 
 boolean noSDCard = false;
 unsigned int rebootcount = 0;           // global var for counting "reboots"
@@ -252,7 +252,6 @@ void ContentType(register byte type) {
 void ConnectionStop() {                    // Closes the connection to client
   client.flush();
   client.stop();                           // shutdown connection
-  loop();
 }
 
 /////////////////////////////////////////////////////////////
@@ -292,11 +291,14 @@ void CPUsleep()
 }
 
 ///////////////////////////////////////////////////////////
+File currentfile;
 
 void printDirectory(File dir, int numTabs) {
+  dir.rewindDirectory();
   while (true) {
     currentfile =  dir.openNextFile();
     if (! currentfile) {
+      currentfile.close();
       break;
     }
     for (unsigned int i = 0; i < numTabs; i++) {
@@ -322,7 +324,6 @@ void printDirectory(File dir, int numTabs) {
     currentfile.close();
     client.print(F("</br>"));
   }
-  currentfile.close();
   dir.close();
   return;
 }
@@ -561,7 +562,6 @@ void loop() {
           else if (strstr(clientline, "/SR " ) != 0) {      // Server reboot
             if (strstr(clientline, basicPasswort) != 0) {        //Ceck wether client has required permissions
               ServerShutdown(true);
-              //continue;
             }
             else {
               protokollErrorHandler(2);
@@ -694,12 +694,14 @@ void loop() {
         }
       }
 
+#ifdef EnableTRACE
       else if (strstr(clientline, "TRACE ") != 0) {
         HTTP200OK();
         ContentType(1);
         client.println(F("plain"));
         client.write(clientline, BUFSIZ);
       }
+#endif
 
       else
       {
