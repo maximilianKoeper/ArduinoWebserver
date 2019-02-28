@@ -1,5 +1,5 @@
 /*                                                           ####################################
-                                                             #   ArduServer     Version 3.3-en  #
+                                                             #   ArduServer     Version 3.3.1-en  #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## STATUS:  STABLE ##
   #####################
@@ -41,7 +41,7 @@
                                                                        ############################
   ___________________________________________________________________________________________________________
 */
-#define securedir "secure/"    // Directory secured by Basic Authentification
+#define securedir "secure/"    // Directory secured by Basic Authentification (Keep in mind that this is not realy secure!!!)
 /*
   ___________________________________________________________________________________________________________
 */
@@ -62,6 +62,9 @@
                                                                        #####################
   ___________________________________________________________________________________________________________
   With the URL "YOURIP/ServerManager" you are able to access the ServerManager
+
+  --> Basic Diagnostic Tools and the possibility to "reboot" the server
+  --> To prevent data corruption on SD card shut the server down before unplugging it
   ___________________________________________________________________________________________________________
                                                                           ###############
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Changelog  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -81,6 +84,10 @@
   1. Bugfix --> printDirectory() is now working properly
   2. Minor improvements
   ___________________________________________________________________________________________________________
+  ## Version 3.3.1-en ##
+  1. Minor changes
+  2. Changes in Documentation
+  ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
@@ -90,7 +97,7 @@
 #include <Ethernet.h>      // Library for Ethernet
 #include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.3-en"
+#define ServerVersion "Version 3.3.1-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 #define FILEBUF 64
@@ -390,11 +397,9 @@ void ServerDiagnose() {
   if (noindex == true) {
     client.print(F("index.htm missing"));
   }
-  /*
   else if (time > 1400 && time / 1400 > rebootcount) {
-    client.print(F("Reboot necessary"));
+    client.print(F("Reboot recommended"));
   }
-  */
   else if (FreeRam() < 1000) {
     client.print(F("Out of Memory"));
   }
