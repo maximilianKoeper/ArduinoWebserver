@@ -41,7 +41,7 @@
                                                                        ############################
   ___________________________________________________________________________________________________________
 */
-#define securedir "secure/"    // Directory secured by Basic Authentification (Keep in mind that this is not realy secure!!!)
+// #define securedir "secure/"    // Directory secured by Basic Authentification (Keep in mind that this is not realy secure!!!)
 /*
   ___________________________________________________________________________________________________________
 */
@@ -87,6 +87,7 @@
   ## Version 3.3.1-en ##
   1. Minor changes
   2. Changes in Documentation
+  3. Set securedir Default to undefined
   ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
