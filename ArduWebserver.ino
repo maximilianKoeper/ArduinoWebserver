@@ -256,11 +256,11 @@ void ConnectionStop() {                    // Closes the connection to client
 void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
   if (noreboot == true) {
     HTTPHeader();
-    client.println(F("<h1>Server Neugestartet</h1>"));
+    client.println(F("<h1>Rebooted</h1>"));
   }
   else {
     HTTPHeader();
-    client.println(F("<h1>Server Heruntergefahren</h1>"));
+    client.println(F("<h1>Shutdown</h1>"));
   }
   client.flush();                          // Clean up some stuff
   client.stop();                           // Close connections
