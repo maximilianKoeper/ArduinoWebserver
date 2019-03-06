@@ -1,7 +1,7 @@
 /*                                                           ####################################
-                                                             #   ArduServer     Version 3.3.1-en  #
+                                                             #   ArduServer    Version 3.4-en   #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  ## STATUS:  STABLE ##
+  ## STATUS:  BETA   ##
   #####################
 
   ___________________________________________________________________________________________________________
@@ -20,14 +20,18 @@
 #define Port 80
 /*
   ___________________________________________________________________________________________________________
-  Mac Adresse can be changed
+  Mac adress can be changed
 */
 #define macAdresse 0xDE, 0xAD, 0xBE, 0xEF, 0xFE, 0xED
+/*
+  Ip adress if DHCP fails or you want to set up your ip manually
+*/
+#define IPADR 192 ,168, 178, 60
+#define EnableDHCP
 /*
   ___________________________________________________________________________________________________________
   OnBoard LED shows status of the server
   --> Led on --> Booting --> Waiting for SD card (or no SD card inserted)
-  --> Led blinking  --> DHCP unsuccessfully
   --> Led fade --> Server has been shutdown
   --> Led off --> everthing is ok
   ___________________________________________________________________________________________________________
@@ -55,7 +59,7 @@
   ___________________________________________________________________________________________________________
 
 */
-#define EnableTRACE
+//#define EnableTRACE
 /*
                                                                        #####################
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Server Manager   #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -75,7 +79,7 @@
   ___________________________________________________________________________________________________________
   ## Version 3.2-en ##
   1. drastically improved transfer speed (to client)
-  2. removed client.connected() check to speed up the transfer speed
+  2. removed client.connected() checks to speed up the transfer speed
   3. removed some unnecessary parts
   4. Some changes
   5. Bugfix
@@ -89,6 +93,13 @@
   2. Changes in Documentation
   3. Set securedir Default to undefined
   ___________________________________________________________________________________________________________
+  ## Version 3.4-en ##
+  1. ServerManager shows unsuccessful login attempts
+  2. ServerManager shows Version of Ehternet Shield
+  3. Minor improvements to reaction speed
+  4. Trace Method is now disabled by default
+  5. Possibility to set a manual IP
+  ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
@@ -98,7 +109,7 @@
 #include <Ethernet.h>      // Library for Ethernet
 #include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.3.1-en"
+#define ServerVersion "Version 3.4-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 #define FILEBUF 64
@@ -108,8 +119,10 @@ uint8_t mac[] = { macAdresse };
 EthernetServer server(Port);
 char *filename;
 
+IPAddress ip(IPADR);
 boolean noSDCard = false;
-unsigned int rebootcount = 0;           // global var for counting "reboots"
+int rebootcount = 0;           // global var for counting "reboots"
+unsigned int attemptedAuth = 0;
 boolean noindex = false;
 
 EthernetClient client;
@@ -117,13 +130,13 @@ EthernetClient client;
 void setup() {
   pinMode(errorLed, OUTPUT);
   digitalWrite(errorLed, HIGH);
-  byte i = 0;
-  while (Ethernet.begin(mac) <= 0) {     // triying DHCP 5 times
-    i++;
-    if (i >= 5) {                        // If DHCP is not successful
-      internalErrorHandler(1);
-    }
-  }
+  
+#ifdef EnableDHCP
+  while (Ethernet.begin(mac) <= 0) {}     // triying to get IP via DHCP
+#else
+  Ethernet.begin(mac, ip);
+#endif 
+
   server.begin();                        // starts server
   if (SD.begin(chipSelect) == true) {    // try to initialize SD card  
     if (!SD.exists(indexfile)) {
@@ -140,9 +153,6 @@ void setup() {
 
 void internalErrorHandler(byte e) {
   switch (e) {
-    case 1:
-      DHCPErrorHandler();
-      break;
     case 2:
       break;
     case 3:
@@ -153,18 +163,6 @@ void internalErrorHandler(byte e) {
       ServerShutdown(true);
       break;
   }
-}
-
-/////////////////////////////////////////////////////////////
-
-void DHCPErrorHandler() {             // Executed if DHCP is not successfully 
-  for (byte x = 0; x < 10; x++) {
-    digitalWrite(errorLed, HIGH);
-    delay(500);
-    digitalWrite(errorLed, LOW);
-    delay(500);
-  }
-  setup();
 }
 
 /////////////////////////////////////////////////////////////
@@ -181,22 +179,13 @@ void protokollErrorHandler(byte e) {
         sendfile();                                   // Close file
         break;
       }
-      else {
-        client.println(F("<h1>404 Not Found</h1>"));
-      }
-      break;
-
+      
     case 2:
       client.println(F("401 Access Denied"));
       client.println(F("WWW-Authenticate: Basic realm=''"));
+      attemptedAuth++;
       break;
-  /*
-      case 3:
-        client.println(F("500 Internal Server Error"));
-        Content();
-        client.println(F("<h1>Internal Server Error</h1>"));
-        break;
-  */
+
     case 4:
       client.println(F("501 Not Implemented"));
       Content();
@@ -258,7 +247,7 @@ void ContentType(register byte type) {
 /////////////////////////////////////////////////////////////
 
 void ConnectionStop() {                    // Closes the connection to client
-  client.flush();
+  //client.flush();
   client.stop();                           // shutdown connection
 }
 
@@ -278,7 +267,9 @@ void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
   if (noreboot == false) {
     CPUsleep();
   }
+#ifdef EnableDHCP
   Ethernet.maintain();                     // Renew DHCP
+#endif
   rebootcount++;
 }
 
@@ -388,11 +379,25 @@ void ServerDiagnose() {
   client.print(F("<h1>Diagnosis data</h1><tr><td>"));
   client.print(F(ServerVersion));
   SpZe(2);
+  client.print(F("Ethernet controller: "));
+  if (Ethernet.hardwareStatus() == EthernetW5100) {
+    client.print(F("W5100"));
+  }
+  else if (Ethernet.hardwareStatus() == EthernetW5200) {
+    client.print(F("W5200"));
+  }
+  else if (Ethernet.hardwareStatus() == EthernetW5500) {
+    client.print(F("W5500"));
+  }
+  SpZe(2);
   client.print(F("Uptime(minutes): "));
   client.print(time);
   SpZe(2);
   client.print(rebootcount);
   client.print(F(" Reboot(s)"));
+  SpZe(2);
+  client.print(attemptedAuth);
+  client.print(F(" unsuccessful login attmpts"));
   SpZe(2);
   client.print(F("Problems: "));
   if (noindex == true) {
