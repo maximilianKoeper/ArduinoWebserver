@@ -268,6 +268,7 @@ void ServerShutdown(boolean noreboot) {      // Reboot or shutdown the server
   }
   client.flush();                          // Clean up some stuff
   client.stop();                           // Close connections
+  SD.begin(chipSelect);
   if (noreboot == false) {
     CPUsleep();
   }
@@ -283,14 +284,10 @@ void CPUsleep()
 {
   wdt_disable();
   set_sleep_mode( SLEEP_MODE_PWR_DOWN );
-
-  while ( true )
-  {
-    sleep_enable();
-    cli();
-    sleep_mode();
-    sleep_cpu();
-  }
+  sleep_enable();
+  cli();
+  sleep_mode();
+  sleep_cpu();
 }
 
 ///////////////////////////////////////////////////////////
@@ -316,7 +313,7 @@ void printDirectory(File dir, int numTabs) {
     else {
       client.print(F(" | "));
       if (currentfile.size() > 1000) {
-        client.print(currentfile.size() / 1024);
+        client.print((float)currentfile.size() / 1024);
         client.print(F(" KiB"));
       }
       else {
@@ -540,6 +537,7 @@ void loop() {
         }
         ConnectionStop();
       }
+      
       else if (strstr(clientline, "GET /") != 0)
       {
         /////////////////////////////////////////////////////////////
