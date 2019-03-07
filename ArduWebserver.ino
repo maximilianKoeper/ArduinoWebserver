@@ -1,5 +1,5 @@
 /*                                                           ####################################
-                                                             #   ArduServer    Version 3.4-en   #
+                                                             #  ArduServer    Version 3.4.1-en  #
   #####################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~####################################~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
   ## STATUS:  STABLE ##
   #####################
@@ -27,7 +27,7 @@
   Ip adress if DHCP fails or you want to set up your ip manually
 */
 #define IPADR 192 ,168, 178, 60
-#define EnableDHCP
+//#define EnableDHCP
 /*
   ___________________________________________________________________________________________________________
   OnBoard LED shows status of the server
@@ -74,9 +74,6 @@
   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~#  Changelog  #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
                                                                           ###############
   ___________________________________________________________________________________________________________
-  ## Version 3.1-en ##
-  1.Translated most parts to English
-  ___________________________________________________________________________________________________________
   ## Version 3.2-en ##
   1. drastically improved transfer speed (to client)
   2. removed client.connected() checks to speed up the transfer speed
@@ -100,6 +97,9 @@
   4. Trace Method is now disabled by default
   5. Possibility to set a manual IP
   ___________________________________________________________________________________________________________
+  ## Version 3.4.1-en ##
+  1. Bugfix 404
+  ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
 #define chipSelect  4
@@ -109,7 +109,7 @@
 #include <Ethernet.h>      // Library for Ethernet
 #include <SD.h>            // Library for SD card
 #define errorLed 13
-#define ServerVersion "Version 3.4-en"
+#define ServerVersion "Version 3.4.1-en"
 #define BUFSIZ 502
 #define BUFSIZE 501
 #define FILEBUF 64
@@ -119,7 +119,9 @@ uint8_t mac[] = { macAdresse };
 EthernetServer server(Port);
 char *filename;
 
+#ifndef EnableDHCP
 IPAddress ip(IPADR);
+#endif
 boolean noSDCard = false;
 int rebootcount = 0;           // global var for counting "reboots"
 unsigned int attemptedAuth = 0;
@@ -179,6 +181,7 @@ void protokollErrorHandler(byte e) {
         sendfile();                                   // Close file
         break;
       }
+      break;
       
     case 2:
       client.println(F("401 Access Denied"));
