@@ -27,7 +27,7 @@
   Ip adress if DHCP fails or you want to set up your ip manually
 */
 #define IPADR 192 ,168, 178, 60
-//#define EnableDHCP
+#define EnableDHCP
 /*
   ___________________________________________________________________________________________________________
   OnBoard LED shows status of the server
@@ -99,6 +99,7 @@
   ___________________________________________________________________________________________________________
   ## Version 3.4.1-en ##
   1. Bugfix 404
+  2. Removing some unnecessary SD Checks
   ___________________________________________________________________________________________________________
   ____________________________________________________________________________________________________________________________________________________________
 */
@@ -507,22 +508,18 @@ void loop() {
   register int i = 0;
   byte bufoverflow = 0;
   char clientline[BUFSIZ];                  // Array, for saving client request temporary
-  register char c;
   client = server.available();
 
   while (client.connected()) {
     if (client.available()) {
       while (client.available()) {
-        c = client.read();
-        clientline[i] = c;
+        clientline[i] = client.read();
         i++;
-        if (i >= BUFSIZ)
-          i = BUFSIZE;
-        bufoverflow++;
-        if (bufoverflow > 200) {
+        if (i >= BUFSIZ){
           break;
-        }
+        }        
       }
+      
       clientline[i] = 0;
       i = 0;
 
@@ -532,9 +529,6 @@ void loop() {
 
       if (strstr(clientline, "GET / ") != 0)     // nothing after "GET /" --> index.htm 
       {
-        if (noSDCard == true) {                // Gets executed if no SD card is available
-          SDCheck();
-        }
         filename = indexfile;
         if (SD.exists(filename)) {               //if "index.htm" exists on SD card
           HTTPHeader();
@@ -552,9 +546,7 @@ void loop() {
 #ifdef securedir
 
         if (strstr(clientline, securedir ) != 0) {    // Passwort required
-          if (noSDCard == true) {                // Gets executed if no SD card is available
-            SDCheck();
-          }
+
           if (strstr(clientline, basicPasswort) != 0) {
           }
           else {
@@ -606,9 +598,7 @@ void loop() {
             }
           }
         }
-        if (noSDCard == true) {                // Gets executed if no SD card is available
-          SDCheck();
-        }
+
         filename = clientline + 5;                     // look after "GET /"
         (strstr(clientline, " HTTP"))[0] = 0;
 
