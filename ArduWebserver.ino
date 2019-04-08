@@ -227,7 +227,7 @@ void HTTP() {                                    //Send "HTTP/1.1" at every begi
 
 /////////////////////////////////////////////////////////////
 
-void ContentType(register byte type) {
+void ContentType(byte type) {
   client.print(F("Content-Type: "));
   switch (type) {
     case 1:
@@ -502,7 +502,7 @@ boolean sendfile(){
 /////////////////////////////////////////////////////////////
 
 void loop() {
-  register int i = 0;
+  int i = 0;
   byte bufoverflow = 0;
   char clientline[BUFSIZ];                  // Array, for saving client request temporary
   client = server.available();
